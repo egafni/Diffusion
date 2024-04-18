@@ -1,6 +1,9 @@
 import torch
 import torch.nn.functional as F
 import math
+from jaxtyping import Float
+from torch import Tensor
+
 
 def cosine_beta_schedule(timesteps, s=0.008):
     """
@@ -13,15 +16,18 @@ def cosine_beta_schedule(timesteps, s=0.008):
     betas = 1 - (alphas_cumprod[1:] / alphas_cumprod[:-1])
     return torch.clip(betas, 0.0001, 0.9999)
 
+
 def linear_beta_schedule(timesteps):
     beta_start = 0.0001
     beta_end = 0.02
     return torch.linspace(beta_start, beta_end, timesteps)
 
+
 def quadratic_beta_schedule(timesteps):
     beta_start = 0.0001
     beta_end = 0.02
-    return torch.linspace(beta_start**0.5, beta_end**0.5, timesteps) ** 2
+    return torch.linspace(beta_start ** 0.5, beta_end ** 0.5, timesteps) ** 2
+
 
 def sigmoid_beta_schedule(timesteps):
     beta_start = 0.0001
@@ -29,12 +35,13 @@ def sigmoid_beta_schedule(timesteps):
     betas = torch.linspace(-6, 6, timesteps)
     return torch.sigmoid(betas) * (beta_end - beta_start) + beta_start
 
+
 class NoiseScheduler():
     def __init__(self,
-                 num_timesteps=1000,
-                 beta_start=0.0001,
-                 beta_end=0.02,
-                 beta_schedule="linear"):
+                 num_timesteps,  # =1000,
+                 beta_start,  # =0.0001,
+                 beta_end,  # =0.02,
+                 beta_schedule):  # ="linear"):
 
         self.num_timesteps = num_timesteps
         if beta_schedule == "linear":
@@ -44,29 +51,27 @@ class NoiseScheduler():
             self.betas = torch.linspace(
                 beta_start ** 0.5, beta_end ** 0.5, num_timesteps, dtype=torch.float32) ** 2
         elif beta_schedule == "log2":
-            self.betas = torch.logspace(math.log2(beta_start),math.log2(beta_end),num_timesteps,base=2)
+            self.betas = torch.logspace(math.log2(beta_start), math.log2(beta_end), num_timesteps, base=2)
         else:
             raise ValueError()
 
-
-        self.alphas = 1.0 - self.betas        
+        self.alphas = 1.0 - self.betas
         # alpha_cumprod = alpha_hat
         self.alphas_cumprod = torch.cumprod(self.alphas, axis=0)
         self.alphas_cumprod_prev = F.pad(self.alphas_cumprod[:-1], (1, 0), value=1.)
-        
 
         # required for self.add_noise
         self.sqrt_alphas_cumprod = self.alphas_cumprod ** 0.5
         self.sqrt_one_minus_alphas_cumprod = (1 - self.alphas_cumprod) ** 0.5
 
         # required for reconstruct_x0
-        self.sqrt_inv_alphas_cumprod = torch.sqrt(1 / self.alphas_cumprod) 
+        self.sqrt_inv_alphas_cumprod = torch.sqrt(1 / self.alphas_cumprod)
         self.sqrt_inv_alphas_cumprod_minus_one = torch.sqrt(1 / self.alphas_cumprod - 1)
 
         # required for q_posterior (two terms of eq 7)
         self.posterior_mean_coef1 = self.betas * torch.sqrt(self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
-        self.posterior_mean_coef2 = (1. - self.alphas_cumprod_prev) * torch.sqrt(self.alphas) / (1. - self.alphas_cumprod)
-        
+        self.posterior_mean_coef2 = (1. - self.alphas_cumprod_prev) * torch.sqrt(self.alphas) / (
+                    1. - self.alphas_cumprod)
 
     # def reconstruct_x0(self, x_t, t, noise):
     #     s1 = self.sqrt_inv_alphas_cumprod[t]
@@ -107,15 +112,16 @@ class NoiseScheduler():
 
     #     return pred_prev_sample
 
-    def add_noise(self, x_start, x_noise, timesteps):
+    def add_noise(self, x_start: Float[Tensor, "B H W"], x_noise: Float[Tensor, "B H W"],
+                  timesteps: Float[Tensor, "B"]):
         s1 = self.sqrt_alphas_cumprod[timesteps]
         s2 = self.sqrt_one_minus_alphas_cumprod[timesteps]
 
-        s1 = s1.reshape(-1, 1)
-        s2 = s2.reshape(-1, 1)
+        for dims in range(x_start.dim() - 1):  # handle any number of dimensions
+            s1 = s1.unsqueeze(-1)  # (B,1,1)
+            s2 = s2.unsqueeze(-1)  # (B,1,1)
 
         return s1 * x_start + s2 * x_noise
 
     def __len__(self):
         return self.num_timesteps
-

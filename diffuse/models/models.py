@@ -32,6 +32,7 @@ class MLP(nn.Module):
         self.input_mlp2 = PositionalEmbedding(emb_size, input_emb, scale=25.0)
 
         concat_size = len(self.time_mlp.layer) + len(self.input_mlp1.layer) + len(self.input_mlp2.layer)
+
         layers = [nn.Linear(concat_size, hidden_size), nn.GELU()]
         for _ in range(hidden_layers):
             layers.append(Block(hidden_size))
@@ -40,9 +41,9 @@ class MLP(nn.Module):
 
     def forward(self, x, t):
         x1_emb = self.input_mlp1(x[:, 0])
-        # x2_emb = self.input_mlp2(x[:, 1])
+        x2_emb = self.input_mlp2(x[:, 1])
         t_emb = self.time_mlp(t)
-        x = torch.cat((x1_emb, t_emb), dim=-1)
+        x = torch.cat((x1_emb,x2_emb, t_emb), dim=-1)
         x = self.joint_mlp(x)
         return x
 
