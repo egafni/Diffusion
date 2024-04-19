@@ -143,8 +143,8 @@ class EmbedFC(nn.Module):
 def unorm(x):
     # unity norm. results in range of [0,1]
     # assume x (h,w,3)
-    xmax = x.max((0, 1))
-    xmin = x.min((0, 1))
+    xmax = x.max((-3,-2))
+    xmin = x.min((-3,-2))
     return (x - xmin) / (xmax - xmin)
 
 
