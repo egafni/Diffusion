@@ -148,6 +148,7 @@ def unorm(x):
     return (x - xmin) / (xmax - xmin)
 
 def unorm(x):
+    assert isinstance(x, np.ndarray)
     # unity norm. results in range of [0,1]
     # assume x (h,w,3)
     # normalizes each image independently
