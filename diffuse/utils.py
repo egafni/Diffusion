@@ -1,7 +1,15 @@
 from PIL import Image
+from torchvision.transforms import Compose, ToTensor, Lambda, ToPILImage
+import numpy as np
+def pil_image_grid(imgs: list[Image]|list[np.array], cols:int, resize=None):
+    if isinstance(imgs[0], np.ndarray):
+        imgs = [ToPILImage()(img) for img in list(imgs)]
 
-def pil_image_grid(imgs: list[Image], cols:int, resize=None):
-    rows = len(imgs) // cols
+    if resize:
+        imgs = [img.resize(resize,resample=Image.NEAREST) for img in imgs ]
+
+
+    rows = len(imgs) // cols + 1
 
     w, h = imgs[0].size
     grid = Image.new('RGB', size=(cols*w, rows*h))
@@ -9,7 +17,5 @@ def pil_image_grid(imgs: list[Image], cols:int, resize=None):
     
     for i, img in enumerate(imgs):
         grid.paste(img, box=(i%cols*w, i//cols*h))
-    if resize:
-        grid = grid.resize((resize[0]//w * grid_w, resize[1]//h * grid_h))
 
     return grid

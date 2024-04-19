@@ -126,6 +126,7 @@ class NoiseScheduler():
     def __len__(self):
         return self.num_timesteps
 
+    @torch.no_grad()
     def sample(self, model, shape):  # noqa: F821
         device = next(model.parameters())[0].device
         x_t = x_T = torch.randn(shape)  # t

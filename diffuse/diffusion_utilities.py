@@ -147,6 +147,14 @@ def unorm(x):
     xmin = x.min((-3,-2))
     return (x - xmin) / (xmax - xmin)
 
+def unorm(x):
+    # unity norm. results in range of [0,1]
+    # assume x (h,w,3)
+    # normalizes each image independently
+    max_ = np.max(x, axis=(-3, -2), keepdims=True)
+    min_ = np.min(x, axis=(-3, -2), keepdims=True)
+    return (x - min_) / (max_ - min_)
+
 
 def norm_all(store, n_t, n_s):
     # runs unity norm on all timesteps of all samples
