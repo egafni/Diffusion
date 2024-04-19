@@ -71,7 +71,7 @@ class NoiseScheduler():
         # required for q_posterior (two terms of eq 7)
         self.posterior_mean_coef1 = self.betas * torch.sqrt(self.alphas_cumprod_prev) / (1. - self.alphas_cumprod)
         self.posterior_mean_coef2 = (1. - self.alphas_cumprod_prev) * torch.sqrt(self.alphas) / (
-                    1. - self.alphas_cumprod)
+                1. - self.alphas_cumprod)
 
     # def reconstruct_x0(self, x_t, t, noise):
     #     s1 = self.sqrt_inv_alphas_cumprod[t]
@@ -125,3 +125,22 @@ class NoiseScheduler():
 
     def __len__(self):
         return self.num_timesteps
+
+    def sample(self, model, shape):  # noqa: F821
+        device = next(model.parameters())[0].device
+        x_t = x_T = torch.randn(shape)  # t
+        traj = [x_T]
+        for t in reversed(range(self.num_timesteps)):
+            if t > 0:
+                z = torch.randn(shape)
+            else:
+                z = torch.zeros(shape)
+
+            # fmt: off
+            pred = model(x_t.to(device), torch.tensor(t).repeat(shape[0], ).to(device)).detach().cpu()
+            x_t = 1 / torch.sqrt(self.alphas[t]) * (
+                    x_t - (1 - self.alphas[t]) / torch.sqrt(1 - self.alphas_cumprod[t]) * pred + torch.sqrt(
+                self.betas[t]) * z)
+            # fmt: on
+            traj.append(x_t)
+        return traj
