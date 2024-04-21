@@ -23,6 +23,7 @@ jupyterlab = "^4.1.6"
 pytest = "^8.1.1"
 jupyter = "^1.0.0"
 black = "^24.4.0"
+ipdb = "^0.13.13"
 
 [build-system]
 requires = ["poetry-core"]

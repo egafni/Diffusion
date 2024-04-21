@@ -14,7 +14,10 @@ def pil_image_grid(imgs: list[Image] | list[np.array], cols: int, resize=None, m
         imgs = [img.resize(resize, resample=Image.NEAREST) for img in imgs]
     if max_n:
         # skip images but make sure to keep the last
-        imgs = imgs[::len(imgs) // (max_n - 2)] + imgs[-1:]
+        last = imgs[-1]
+        imgs = imgs[::len(imgs) // (max_n - 2)]
+        if last != imgs[-1:]: # add last image if not already there
+            imgs += [last]
 
     rows = math.ceil(len(imgs) / cols)
 
