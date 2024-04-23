@@ -1,7 +1,8 @@
 .venv
 base
-notebooks/weights
+
 notebooks/exps
+notebooks/weights*
 .vscode
 .idea
 # Byte-compiled / optimized / DLL files

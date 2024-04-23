@@ -18,13 +18,14 @@ class Block(nn.Module):
 
 class MLP2D(nn.Module):
     """only works with 2d data"""
+
     def __init__(
-        self,
-        hidden_size: int = 128,
-        hidden_layers: int = 3,
-        emb_size: int = 128,
-        time_emb: str = "sinusoidal",
-        input_emb: str = "sinusoidal",
+            self,
+            hidden_size: int = 128,
+            hidden_layers: int = 3,
+            emb_size: int = 128,
+            time_emb: str = "sinusoidal",
+            input_emb: str = "sinusoidal",
     ):
         super().__init__()
 
@@ -41,11 +42,9 @@ class MLP2D(nn.Module):
         self.joint_mlp = nn.Sequential(*layers)
 
     def forward(self, x, t):
-
         x1_emb = self.input_mlp1(x[:, 0])
         x2_emb = self.input_mlp2(x[:, 1])
         t_emb = self.time_mlp(t)
-        x = torch.cat((x1_emb,x2_emb, t_emb), dim=-1)
+        x = torch.cat((x1_emb, x2_emb, t_emb), dim=-1)
         x = self.joint_mlp(x)
         return x
-
